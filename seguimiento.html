@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1a22">
+<title>Seguimiento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1a22;
+    --panel: #16252f;
+    --line: #25394a;
+    --ink: #e8eef0;
+    --muted: #8fa4b0;
+    --accent: #79c3b5;
+    --l1: #2b3844; --l1t: #c7d3da;
+    --l2: #3b6072; --l2t: #eaf3f6;
+    --l3: #3f8f93; --l3t: #06201f;
+    --l4: #d9b56b; --l4t: #2a1d04;
+    --l5: #f0875a; --l5t: #2f1004;
+    --font: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f3f1ec; --panel: #ffffff; --line: #ddd8cd;
+      --ink: #15232b; --muted: #5d7079; --accent: #1f6f66;
+      --l1: #cfd6da; --l1t: #1d2a32;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }
+  body { padding: env(safe-area-inset-top) 0 calc(76px + env(safe-area-inset-bottom)); -webkit-tap-highlight-color: transparent; }
+  main { max-width: 520px; margin: 0 auto; padding: 20px 16px; }
+  h1 { font-size: 1.9rem; line-height: 1.1; margin: 0; font-weight: 800; letter-spacing: -0.02em; }
+  h2 { font-size: 1.05rem; margin: 28px 0 10px; font-weight: 600; color: var(--muted); }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+  button:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .datebar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .datebar .nav { width: 44px; height: 44px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); font-size: 1.2rem; }
+  .datebar .nav:disabled { opacity: .3; cursor: default; }
+  .datebar .title { flex: 1; text-align: center; }
+  .sub { color: var(--muted); font-size: .9rem; margin-top: 4px; }
+
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .opt { flex: 1 1 0; min-width: 96px; padding: 14px 12px; border-radius: 14px; background: var(--panel); border: 1.5px solid var(--line); font-weight: 600; text-align: center; }
+  .opt[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, var(--panel)); }
+  .chip { flex: 0 0 auto; min-width: 0; padding: 10px 14px; font-weight: 400; }
+
+  .ladder { display: flex; flex-direction: column; gap: 8px; }
+  .lvl { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 14px 16px; border-radius: 14px; border: 2px solid transparent; }
+  .lvl .name { font-weight: 800; font-size: 1.05rem; letter-spacing: -0.01em; }
+  .lvl .desc { font-size: .88rem; opacity: .85; margin-top: 2px; }
+  .lvl .check { margin-left: auto; font-size: 1.3rem; opacity: 0; }
+  .lvl[aria-pressed="true"] { border-color: var(--ink); }
+  .lvl[aria-pressed="true"] .check { opacity: 1; }
+  .lvl[data-l="1"] { background: var(--l1); color: var(--l1t); }
+  .lvl[data-l="2"] { background: var(--l2); color: var(--l2t); }
+  .lvl[data-l="3"] { background: var(--l3); color: var(--l3t); }
+  .lvl[data-l="4"] { background: var(--l4); color: var(--l4t); }
+  .lvl[data-l="5"] { background: var(--l5); color: var(--l5t); }
+
+  textarea { width: 100%; min-height: 84px; padding: 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; resize: vertical; }
+  .saved { color: var(--muted); font-size: .85rem; margin-top: 14px; text-align: center; min-height: 1.2em; }
+
+  .tabs { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--panel); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  .tabs button { flex: 1; padding: 16px 0; font-weight: 600; color: var(--muted); }
+  .tabs button[aria-selected="true"] { color: var(--ink); box-shadow: inset 0 3px 0 var(--accent); }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+  .stat b { display: block; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
+  .stat span { color: var(--muted); font-size: .8rem; }
+
+  .bars { display: flex; flex-direction: column; gap: 8px; }
+  .bar { display: grid; grid-template-columns: 130px 1fr 28px; align-items: center; gap: 10px; font-size: .9rem; }
+  .bar .track { height: 14px; border-radius: 7px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
+  .bar .fill { height: 100%; border-radius: 7px; }
+  .bar .n { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+
+  .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cell { aspect-ratio: 1; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); font-size: .7rem; color: var(--muted); display: flex; align-items: flex-start; justify-content: flex-start; padding: 4px 5px; position: relative; }
+  .cell.has { border-color: transparent; }
+  .cell .g { position: absolute; right: 4px; bottom: 3px; font-size: .75rem; }
+  .cell[data-l="1"] { background: var(--l1); color: var(--l1t); }
+  .cell[data-l="2"] { background: var(--l2); color: var(--l2t); }
+  .cell[data-l="3"] { background: var(--l3); color: var(--l3t); }
+  .cell[data-l="4"] { background: var(--l4); color: var(--l4t); }
+  .cell[data-l="5"] { background: var(--l5); color: var(--l5t); }
+  .legend { color: var(--muted); font-size: .8rem; margin-top: 8px; }
+
+  .backup button { padding: 12px 14px; border-radius: 12px; background: var(--panel); border: 1.5px solid var(--line); font-weight: 600; }
+  .backup textarea { margin-top: 10px; min-height: 70px; font-size: .8rem; }
+  .hidden { display: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    .opt, .lvl { transition: border-color .15s, background .15s; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <section id="view-hoy">
+    <div class="datebar">
+      <button class="nav" id="prev" aria-label="Día anterior">‹</button>
+      <div class="title">
+        <h1 id="dateTitle"></h1>
+        <div class="sub" id="dateSub"></div>
+      </div>
+      <button class="nav" id="next" aria-label="Día siguiente">›</button>
+    </div>
+
+    <h2>Gimnasio</h2>
+    <div class="row" id="gym">
+      <button class="opt" data-gym="si" aria-pressed="false">Fui</button>
+      <button class="opt" data-gym="no" aria-pressed="false">No fui</button>
+    </div>
+    <div class="hidden" id="parts">
+      <div class="sub" style="margin:14px 0 8px">¿Qué hiciste? Marca todo lo que trabajaste</div>
+      <div class="row">
+        <button class="opt chip" data-part="Piernas" aria-pressed="false">Piernas</button>
+        <button class="opt chip" data-part="Espalda" aria-pressed="false">Espalda</button>
+        <button class="opt chip" data-part="Hombros" aria-pressed="false">Hombros</button>
+        <button class="opt chip" data-part="Pecho" aria-pressed="false">Pecho</button>
+        <button class="opt chip" data-part="Bíceps" aria-pressed="false">Bíceps</button>
+        <button class="opt chip" data-part="Tríceps" aria-pressed="false">Tríceps</button>
+        <button class="opt chip" data-part="Abdomen" aria-pressed="false">Abdomen</button>
+      </div>
+    </div>
+
+    <h2>Movimiento del día</h2>
+    <div class="ladder" id="ladder"></div>
+
+    <h2>Alimentación</h2>
+    <div class="row" id="food">
+      <button class="opt" data-food="0" aria-pressed="false">Bien</button>
+      <button class="opt" data-food="1" aria-pressed="false">Regular</button>
+      <button class="opt" data-food="2" aria-pressed="false">Se me fue</button>
+    </div>
+
+    <h2>Nota del día</h2>
+    <textarea id="note" placeholder="Opcional: cómo te sentiste, qué trabajaste, lo que quieras recordar"></textarea>
+    <div class="saved" id="saved"></div>
+  </section>
+
+  <section id="view-hist" class="hidden">
+    <h1>Últimos 28 días</h1>
+    <div class="stats" id="stats"></div>
+
+    <h2>Cómo fueron tus días</h2>
+    <div class="bars" id="bars"></div>
+
+    <h2>Calendario</h2>
+    <div class="grid" id="grid"></div>
+    <div class="legend">Un punto ● marca día de gimnasio. El color es el nivel de movimiento.</div>
+
+    <h2>Respaldo</h2>
+    <div class="backup">
+      <div class="row">
+        <button id="btnExport">Copiar respaldo</button>
+        <button id="btnImport">Restaurar</button>
+      </div>
+      <textarea id="backup" class="hidden" placeholder="Pega aquí un respaldo para restaurarlo"></textarea>
+      <div class="saved" id="backupMsg"></div>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" id="tab-hoy" aria-selected="true">Hoy</button>
+  <button role="tab" id="tab-hist" aria-selected="false">Historial</button>
+</nav>
+
+<script>
+(function () {
+  var KEY = 'seguimiento-v1';
+  var LEVELS = [
+    { l: 1, name: 'Día quieto', desc: 'Cama, computadora y baño' },
+    { l: 2, name: 'Movimiento mínimo', desc: 'Unas pocas cuadras, menos de 10 min' },
+    { l: 3, name: 'Caminata real', desc: '20 minutos o más caminando' },
+    { l: 4, name: 'Actividad activa', desc: 'Meta Quest: box o aeróbicos' },
+    { l: 5, name: 'Cardio completo', desc: 'Bicicleta por el malecón' }
+  ];
+
+  var data = load();
+  var current = todayKey();
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; }
+  }
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify(data)); flash('Guardado'); }
+    catch (e) { flash('No se pudo guardar en este navegador'); }
+  }
+  var flashTimer;
+  function flash(msg) {
+    var el = document.getElementById('saved');
+    el.textContent = msg;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { el.textContent = ''; }, 1800);
+  }
+
+  // El día cambia a las 5 a. m., para que la madrugada cuente como el día anterior.
+  function fmt(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function todayKey() { return fmt(new Date(Date.now() - 5 * 3600 * 1000)); }
+  function parse(k) { var p = k.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function shift(k, n) { var d = parse(k); d.setDate(d.getDate() + n); return fmt(d); }
+
+  function entry(k) { return data[k] || {}; }
+  function update(k, patch) {
+    data[k] = Object.assign({}, data[k], patch);
+    persist();
+  }
+
+  function renderLadder() {
+    var box = document.getElementById('ladder');
+    box.innerHTML = '';
+    LEVELS.forEach(function (x) {
+      var b = document.createElement('button');
+      b.className = 'lvl';
+      b.dataset.l = x.l;
+      b.setAttribute('aria-pressed', 'false');
+      var t = document.createElement('div');
+      var n = document.createElement('div'); n.className = 'name'; n.textContent = x.name;
+      var d = document.createElement('div'); d.className = 'desc'; d.textContent = x.desc;
+      t.appendChild(n); t.appendChild(d);
+      var c = document.createElement('span'); c.className = 'check'; c.textContent = '✓';
+      b.appendChild(t); b.appendChild(c);
+      box.appendChild(b);
+    });
+  }
+
+  function renderDay() {
+    var e = entry(current);
+    var d = parse(current);
+    var title = d.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+    document.getElementById('dateTitle').textContent = title.charAt(0).toUpperCase() + title.slice(1);
+    var t = todayKey();
+    document.getElementById('dateSub').textContent = current === t ? 'Hoy' : (current > t ? '' : 'Editando un día anterior');
+    document.getElementById('next').disabled = current >= t;
+
+    document.querySelectorAll('[data-gym]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(e.gym === b.dataset.gym));
+    });
+    var parts = document.getElementById('parts');
+    parts.classList.toggle('hidden', e.gym !== 'si');
+    parts.querySelectorAll('[data-part]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String((e.parts || []).indexOf(b.dataset.part) !== -1));
+    });
+    document.querySelectorAll('.lvl').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(Number(b.dataset.l) === e.move));
+    });
+    document.querySelectorAll('[data-food]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(e.food !== undefined && Number(b.dataset.food) === e.food));
+    });
+    document.getElementById('note').value = e.note || '';
+  }
+
+  function renderHist() {
+    var today = todayKey();
+    var keys = [];
+    for (var i = 27; i >= 0; i--) keys.push(shift(today, -i));
+
+    var logged = 0, gym = 0, quiet = 0;
+    var counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    keys.forEach(function (k) {
+      var e = data[k];
+      if (!e) return;
+      if (e.move || e.gym || e.food !== undefined) logged++;
+      if (e.gym === 'si') gym++;
+      if (e.move) { counts[e.move]++; if (e.move === 1) quiet++; }
+    });
+
+    var stats = document.getElementById('stats');
+    stats.innerHTML = '';
+    [['Días registrados', logged + ' de 28'], ['Fui al gimnasio', String(gym)], ['Días quietos', String(quiet)]].forEach(function (s) {
+      var d = document.createElement('div'); d.className = 'stat';
+      var b = document.createElement('b'); b.textContent = s[1];
+      var sp = document.createElement('span'); sp.textContent = s[0];
+      d.appendChild(b); d.appendChild(sp); stats.appendChild(d);
+    });
+
+    var max = Math.max(1, counts[1], counts[2], counts[3], counts[4], counts[5]);
+    var bars = document.getElementById('bars');
+    bars.innerHTML = '';
+    LEVELS.forEach(function (x) {
+      var r = document.createElement('div'); r.className = 'bar';
+      var n = document.createElement('div'); n.textContent = x.name;
+      var tr = document.createElement('div'); tr.className = 'track';
+      var f = document.createElement('div'); f.className = 'fill';
+      f.style.width = (counts[x.l] / max * 100) + '%';
+      f.style.background = 'var(--l' + x.l + ')';
+      tr.appendChild(f);
+      var c = document.createElement('div'); c.className = 'n'; c.textContent = counts[x.l];
+      r.appendChild(n); r.appendChild(tr); r.appendChild(c);
+      bars.appendChild(r);
+    });
+
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    keys.forEach(function (k) {
+      var e = data[k] || {};
+      var c = document.createElement('button');
+      c.className = 'cell' + (e.move ? ' has' : '');
+      if (e.move) c.dataset.l = e.move;
+      c.textContent = parse(k).getDate();
+      c.setAttribute('aria-label', k);
+      if (e.gym === 'si') { var g = document.createElement('span'); g.className = 'g'; g.textContent = '●'; c.appendChild(g); }
+      c.addEventListener('click', function () { current = k; showTab('hoy'); renderDay(); window.scrollTo(0, 0); });
+      grid.appendChild(c);
+    });
+  }
+
+  function showTab(which) {
+    var hoy = which === 'hoy';
+    document.getElementById('view-hoy').classList.toggle('hidden', !hoy);
+    document.getElementById('view-hist').classList.toggle('hidden', hoy);
+    document.getElementById('tab-hoy').setAttribute('aria-selected', String(hoy));
+    document.getElementById('tab-hist').setAttribute('aria-selected', String(!hoy));
+    if (!hoy) renderHist();
+  }
+
+  renderLadder();
+  renderDay();
+
+  document.getElementById('prev').addEventListener('click', function () { current = shift(current, -1); renderDay(); });
+  document.getElementById('next').addEventListener('click', function () {
+    if (current < todayKey()) { current = shift(current, 1); renderDay(); }
+  });
+
+  document.getElementById('gym').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-gym]'); if (!b) return;
+    var e = entry(current);
+    update(current, { gym: e.gym === b.dataset.gym ? undefined : b.dataset.gym });
+    renderDay();
+  });
+  document.getElementById('parts').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-part]'); if (!b) return;
+    var parts = (entry(current).parts || []).slice();
+    var i = parts.indexOf(b.dataset.part);
+    if (i === -1) parts.push(b.dataset.part); else parts.splice(i, 1);
+    update(current, { parts: parts });
+    renderDay();
+  });
+  document.getElementById('ladder').addEventListener('click', function (ev) {
+    var b = ev.target.closest('.lvl'); if (!b) return;
+    var l = Number(b.dataset.l);
+    update(current, { move: entry(current).move === l ? undefined : l });
+    renderDay();
+  });
+  document.getElementById('food').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-food]'); if (!b) return;
+    var v = Number(b.dataset.food);
+    update(current, { food: entry(current).food === v ? undefined : v });
+    renderDay();
+  });
+  var noteTimer;
+  document.getElementById('note').addEventListener('input', function (ev) {
+    var v = ev.target.value, k = current;
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(function () { update(k, { note: v }); }, 500);
+  });
+
+  document.getElementById('tab-hoy').addEventListener('click', function () { showTab('hoy'); });
+  document.getElementById('tab-hist').addEventListener('click', function () { showTab('hist'); });
+
+  var backup = document.getElementById('backup');
+  var msg = document.getElementById('backupMsg');
+  document.getElementById('btnExport').addEventListener('click', function () {
+    var text = JSON.stringify(data);
+    backup.classList.remove('hidden');
+    backup.value = text;
+    backup.select();
+    try {
+      navigator.clipboard.writeText(text).then(function () { msg.textContent = 'Respaldo copiado. Pégalo en una nota o mensaje para guardarlo.'; },
+        function () { msg.textContent = 'Copia el texto de arriba para guardarlo.'; });
+    } catch (e) { msg.textContent = 'Copia el texto de arriba para guardarlo.'; }
+  });
+  document.getElementById('btnImport').addEventListener('click', function () {
+    if (backup.classList.contains('hidden') || !backup.value.trim()) {
+      backup.classList.remove('hidden'); backup.value = ''; backup.focus();
+      msg.textContent = 'Pega el respaldo y vuelve a tocar Restaurar.';
+      return;
+    }
+    try {
+      var parsed = JSON.parse(backup.value);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new Error('formato');
+      data = parsed; persist(); renderDay(); renderHist();
+      msg.textContent = 'Respaldo restaurado.';
+    } catch (e) { msg.textContent = 'Ese texto no es un respaldo válido.'; }
+  });
+})();
+</script>
+</body>
+</html>
